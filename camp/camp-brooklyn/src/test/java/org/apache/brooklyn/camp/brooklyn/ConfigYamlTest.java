@@ -18,10 +18,9 @@
  */
 package org.apache.brooklyn.camp.brooklyn;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +66,28 @@ public class ConfigYamlTest extends AbstractYamlTest {
     public void tearDown() throws Exception {
         super.tearDown();
         if (executor != null) executor.shutdownNow();
+    }
+
+    @Test
+    public void testFoo() throws Exception {
+        String catalogCluster = Joiner.on("\n").join(
+                "brooklyn.catalog:",
+                "  version: 1.0",
+                "  id: sub-type-cluster",
+                "  item:",
+                "    type: org.apache.brooklyn.camp.brooklyn.TestDynamicCluster");
+
+        String yaml = Joiner.on("\n").join(
+                "services:",
+                "- type: sub-type-cluster");
+
+        addCatalogItems(catalogCluster);
+        final Entity app = createStartWaitAndLogApplication(yaml);
+        Collection<Entity> children = Iterables.getLast(app.getChildren()).getChildren();
+        TestEntity entity = (TestEntity) Iterables.getLast(children);
+
+        assertEquals(entity.config().get(SubtypeEntity.CONF_OBJECT), "myval", "new config");
+        assertEquals(entity.config().get(TestEntity.CONF_OBJECT), "myval", "previous config");
     }
 
     @Test
